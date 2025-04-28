@@ -1,0 +1,38 @@
+---
+name: Python package
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: "v*"
+  pull_request:
+  release:
+    types: [published]
+jobs:
+  package:
+    name: Build & inspect our package.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: hynek/build-and-inspect-python-package@v2
+  publish-to-testpypi:
+    name: Upload release to TestPyPI
+    needs: [package]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/aiowowapi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: Packages
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
